@@ -19,13 +19,12 @@ group_by_expression
 ;
 
 filter_expression
-: expression ( ( OP_EQ | OP_NOT_EQ | OP_LT | OP_LE | OP_GT | OP_GE | K_LIKE ) expression )?
-| expression K_IS K_NOT? K_NULL
-| expression K_IN OP_RBO ( expression (',' expression)* | subquery_single ) OP_RBC
-| expression K_EXISTS OP_RBO ( subquery_single ) OP_RBC
-| K_NOT filter_expression
+: filter_expression ( ( K_AND | K_OR ) filter_expression )+
 | OP_RBO filter_expression OP_RBC
-| filter_expression ( ( K_AND | K_OR ) filter_expression )+
+| expression ( ( OP_EQ | OP_NOT_EQ | OP_LT | OP_LE | OP_GT | OP_GE | K_NOT? K_LIKE ) expression )?
+| expression K_IS K_NOT? K_NULL
+| expression K_NOT? K_IN OP_RBO ( expression (',' expression)* | subquery_single ) OP_RBC
+| expression K_NOT? K_EXISTS OP_RBO ( subquery_single ) OP_RBC
 ;
 
 join_clause

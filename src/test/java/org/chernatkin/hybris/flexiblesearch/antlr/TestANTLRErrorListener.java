@@ -22,7 +22,6 @@ public class TestANTLRErrorListener implements ANTLRErrorListener {
     public void reportContextSensitivity(Parser recognizer, DFA dfa,
             int startIndex, int stopIndex, int prediction,
             ATNConfigSet configs) {
-        throw new RuntimeException();
     }
 
     @Override
