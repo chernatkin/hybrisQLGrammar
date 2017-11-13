@@ -10,7 +10,7 @@ select_single
   K_FROM ( OP_RBO subquery_full OP_RBC any_identifier | OP_CBO table_expression join_clause* OP_CBC )
   ( K_WHERE filter_expression )?
   ( K_GROUP K_BY group_by_expression ( ',' group_by_expression )* )?
-  ( K_ORDER K_BY ( group_by_expression ( K_ASC | K_DESC )? ) )?
+  ( K_ORDER K_BY group_by_expression ( K_ASC | K_DESC )? ( ',' group_by_expression ( K_ASC | K_DESC )? )* )?
 ;
 
 group_by_expression
