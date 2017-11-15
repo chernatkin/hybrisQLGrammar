@@ -6,10 +6,11 @@ grammar hybrisQL;
 
 
 select_single
-: K_SELECT K_DISTINCT? ( '*' | result_column ( ',' result_column )* )
+: K_SELECT K_DISTINCT? ( OP_ATSK | result_column ( ',' result_column )* )
   K_FROM ( OP_RBO subquery_full OP_RBC any_identifier | OP_CBO table_expression join_clause* OP_CBC )
   ( K_WHERE filter_expression )?
   ( K_GROUP K_BY group_by_expression ( ',' group_by_expression )* )?
+  ( K_HAVING filter_expression ( ',' filter_expression )* )?
   ( K_ORDER K_BY group_by_expression ( K_ASC | K_DESC )? ( ',' group_by_expression ( K_ASC | K_DESC )? )* )?
 ;
 
@@ -21,6 +22,7 @@ group_by_expression
 filter_expression
 : filter_expression ( ( K_AND | K_OR ) filter_expression )+
 | OP_RBO filter_expression OP_RBC
+| K_NOT filter_expression
 | expression ( ( OP_EQ | OP_NOT_EQ | OP_LT | OP_LE | OP_GT | OP_GE | K_NOT? K_LIKE ) expression )?
 | expression K_IS K_NOT? K_NULL
 | expression K_NOT? K_IN OP_RBO ( expression (',' expression)* | subquery_single ) OP_RBC
@@ -52,25 +54,27 @@ subquery_single
 ;
 
 result_column
- : expression ( K_AS any_identifier )?
- ;
+: expression ( K_AS any_identifier )?
+;
  
- field_reference
- : OP_CBO (any_identifier FIELD_REF_SEPARATOR)? any_identifier (FIELD_REF_SEPARATOR any_identifier)? OP_CBC
- ;
+field_reference
+: OP_CBO (any_identifier FIELD_REF_SEPARATOR)? any_identifier (FIELD_REF_SEPARATOR any_identifier)? OP_CBC
+;
  
 function_call
 : any_identifier OP_RBO expression (',' expression)* OP_RBC
 | any_identifier OP_RBO K_DISTINCT? expression OP_RBC
+| any_identifier OP_RBO OP_ATSK OP_RBC
 ;
 
  expression
- : field_reference
- | STRING_LITERAL
- | signed_number
- | bind_parameter
- | function_call
- ;
+: OP_RBO expression OP_RBC
+| field_reference
+| STRING_LITERAL
+| signed_number
+| bind_parameter
+| function_call
+;
 
 
 compound_operator
@@ -120,6 +124,7 @@ any_keyword
 | K_THEN
 | K_ELSE
 | K_GROUP
+| K_HAVING
 ;
 
 
@@ -156,6 +161,7 @@ K_WHEN : W H E N;
 K_THEN : T H E N;
 K_ELSE : E L S E;
 K_GROUP : G R O U P; 
+K_HAVING : H A V I N G;
 
 
 //operators
@@ -170,6 +176,7 @@ OP_CBC : '}';
 OP_RBO : '(';
 OP_RBC : ')';
 OP_EXCL : '!';
+OP_ATSK : '*';
 
 IDENTIFIER
 : [a-zA-Z_][a-zA-Z_0-9]*
