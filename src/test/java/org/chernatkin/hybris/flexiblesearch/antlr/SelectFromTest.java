@@ -30,7 +30,7 @@ public class SelectFromTest extends AbstractHybrisQLTest {
 
     @Test
     public void selectFromWithoutJoin() {
-        final String query = "SELECT {o.PK}, {o.price} FROM {Order AS o}";
+        final String query = "SELECT {o.PK} AS pk, {o.price} AS price FROM {Order AS o}";
         testQuery(query);
     }
 
@@ -85,4 +85,23 @@ public class SelectFromTest extends AbstractHybrisQLTest {
         testQuery(query);
     }
 
+    @Test
+    public void selectFromWithCountAsreriskFunction() {
+        final String query = "SELECT DATE_FORMAT({o:date},'%M/%Y'), COUNT(*) FROM {Order AS o}";
+        testQuery(query);
+    }
+
+    @Test
+    public void selectFromCaseWhen() {
+        final String query = "SELECT {vc.PK}, CASE WHEN {vc.price} = 0 THEN 'FREE' WHEN {vc.price} < 10 THEN ROUND({vc.price}) ELSE 'EXPENSIVE' END "
+                + "FROM {Order AS o JOIN VoucherCard AS vc ON {vc.order} = {o.pk}}";
+        testQuery(query);
+    }
+
+    @Test
+    public void selectFromCaseWhenWithBrackets() {
+        final String query = "SELECT {vc.PK}, (CASE WHEN (0 = {vc.price}) THEN ('FREE') WHEN (IS_POSITIVE({vc.price})) THEN (ROUND({vc.price})) ELSE (RANDOM()) END) AS price "
+                + "FROM {Order AS o JOIN VoucherCard AS vc ON {vc.order} = {o.pk}}";
+        testQuery(query);
+    }
 }

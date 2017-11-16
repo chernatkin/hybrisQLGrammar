@@ -29,10 +29,10 @@ public class SelectWhereTest extends AbstractHybrisQLTest {
                 + "WHERE {p1.PK} <> {p2.PK} "
                   + "AND ({p1.PK} != {p2.PK} OR ({p1.code} = ?code AND {p2.code} IS NULL)) "
                   + "AND ({p1.code} IS NOT NULL) "
-                   + "OR ({p1.index} > 2 "
-                   + "AND {p2.index} >= +2 "
-                   + "AND {p1.index} < -5 "
-                   + "AND {p2.index} <= -5 "
+                   + "OR (({p1.index} > 2) "
+                   + "AND NOT {p2.index} >= +2 "
+                   + "AND NOT NOT {p1.index} < -5 "
+                   + "AND ( NOT ({p2.index} <= -5)) "
                    + "AND {p1.name} LIKE '%name%' "
                    + "AND {p2.name} NOT LIKE '%test%')";
         testQuery(query);
@@ -63,6 +63,12 @@ public class SelectWhereTest extends AbstractHybrisQLTest {
     }
 
     @Test
+    public void selectWhereInSubqueryWithUnion() {
+        final String query = "SELECT * FROM {Product AS p} WHERE {p.pk} IN ({{ SELECT {product} FROM {Order} }} UNION {{ SELECT {product} FROM {Cart} }})";
+        testQuery(query);
+    }
+
+    @Test
     public void selectWhereExistsSubquery() {
         final String query = "SELECT * FROM {Product AS p} WHERE {p.pk} EXISTS ({{ SELECT {product} FROM {Order} }})";
         testQuery(query);
@@ -71,6 +77,12 @@ public class SelectWhereTest extends AbstractHybrisQLTest {
     @Test
     public void selectWhereNotExistsSubquery() {
         final String query = "SELECT * FROM {Product AS p} WHERE {p.pk} NOT EXISTS ({{ SELECT {product} FROM {Order} }})";
+        testQuery(query);
+    }
+
+    @Test
+    public void selectWhereExistsSubqueryWithUnionAll() {
+        final String query = "SELECT * FROM {Product AS p} WHERE {p.pk} EXISTS ({{ SELECT {product} FROM {Order} }} UNION ALL {{ SELECT {product} FROM {Cart} }})";
         testQuery(query);
     }
 

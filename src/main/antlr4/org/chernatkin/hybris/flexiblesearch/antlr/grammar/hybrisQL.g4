@@ -25,8 +25,8 @@ filter_expression
 | K_NOT filter_expression
 | expression ( ( OP_EQ | OP_NOT_EQ | OP_LT | OP_LE | OP_GT | OP_GE | K_NOT? K_LIKE ) expression )?
 | expression K_IS K_NOT? K_NULL
-| expression K_NOT? K_IN OP_RBO ( expression (',' expression)* | subquery_single ) OP_RBC
-| expression K_NOT? K_EXISTS OP_RBO ( subquery_single ) OP_RBC
+| expression K_NOT? K_IN OP_RBO ( expression (',' expression)* | subquery_full ) OP_RBC
+| expression K_NOT? K_EXISTS OP_RBO ( subquery_full ) OP_RBC
 ;
 
 join_clause
@@ -56,7 +56,7 @@ subquery_single
 result_column
 : expression ( K_AS any_identifier )?
 ;
- 
+
 field_reference
 : OP_CBO (any_identifier FIELD_REF_SEPARATOR)? any_identifier (FIELD_REF_SEPARATOR any_identifier)? OP_CBC
 ;
@@ -65,6 +65,7 @@ function_call
 : any_identifier OP_RBO expression (',' expression)* OP_RBC
 | any_identifier OP_RBO K_DISTINCT? expression OP_RBC
 | any_identifier OP_RBO OP_ATSK OP_RBC
+| any_identifier OP_RBO OP_RBC
 ;
 
  expression
@@ -74,8 +75,16 @@ function_call
 | signed_number
 | bind_parameter
 | function_call
+| case_when_expression
 ;
 
+case_when_expression
+: K_CASE ( K_WHEN filter_expression K_THEN case_then_expression+ )+ K_ELSE case_then_expression K_END
+;
+
+case_then_expression
+: ( expression | OP_RBO OP_CBO OP_CBO subquery_full OP_CBC OP_CBC OP_RBC )
+;
 
 compound_operator
  : K_UNION
@@ -125,6 +134,7 @@ any_keyword
 | K_ELSE
 | K_GROUP
 | K_HAVING
+| K_END
 ;
 
 
@@ -162,6 +172,7 @@ K_THEN : T H E N;
 K_ELSE : E L S E;
 K_GROUP : G R O U P; 
 K_HAVING : H A V I N G;
+K_END : E N D;
 
 
 //operators
