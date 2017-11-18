@@ -6,7 +6,7 @@ import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.TokenStream;
 import org.chernatkin.hybris.flexiblesearch.antlr.grammar.hybrisQLLexer;
 import org.chernatkin.hybris.flexiblesearch.antlr.grammar.hybrisQLParser;
-import org.chernatkin.hybris.flexiblesearch.antlr.grammar.hybrisQLParser.Select_singleContext;
+import org.chernatkin.hybris.flexiblesearch.antlr.grammar.hybrisQLParser.Select_queryContext;
 import org.junit.Assert;
 
 
@@ -22,9 +22,9 @@ public abstract class AbstractHybrisQLTest {
         final hybrisQLParser parser = new hybrisQLParser(tokenStream);
         parser.addErrorListener(new TestANTLRErrorListener());
 
-        final Select_singleContext equationContext = parser.select_single();
+        final Select_queryContext queryContext = parser.select_query();
 
-        Assert.assertEquals(query.replaceAll("[\\s]", ""), equationContext.getText());
+        Assert.assertEquals(query.replaceAll("[\\s]", ""), queryContext.getText());
     }
 
 }

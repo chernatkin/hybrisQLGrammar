@@ -4,19 +4,36 @@ grammar hybrisQL;
  * Parser Rules
  */
 
+select_query
+: ( select_single | select_temp_table )
+;
+
+select_temp_table
+: K_SELECT K_DISTINCT? ( OP_ATSK | temp_table_result_column ( OP_CMA temp_table_result_column )* )
+  K_FROM OP_RBO subquery_full OP_RBC any_identifier
+  ( K_WHERE temp_table_filter_expression )?
+  ( K_GROUP K_BY temp_table_group_by_expression ( OP_CMA temp_table_group_by_expression )* )?
+  ( K_HAVING temp_table_filter_expression ( OP_CMA temp_table_filter_expression )* )?
+  ( K_ORDER K_BY temp_table_group_by_expression ( K_ASC | K_DESC )? ( OP_CMA temp_table_group_by_expression ( K_ASC | K_DESC )? )* )?
+;
 
 select_single
-: K_SELECT K_DISTINCT? ( OP_ATSK | result_column ( ',' result_column )* )
-  K_FROM ( OP_RBO subquery_full OP_RBC any_identifier | OP_CBO table_expression join_clause* OP_CBC )
+: K_SELECT K_DISTINCT? ( OP_ATSK | result_column ( OP_CMA result_column )* )
+  K_FROM OP_CBO table_expression join_clause* OP_CBC
   ( K_WHERE filter_expression )?
-  ( K_GROUP K_BY group_by_expression ( ',' group_by_expression )* )?
-  ( K_HAVING filter_expression ( ',' filter_expression )* )?
-  ( K_ORDER K_BY group_by_expression ( K_ASC | K_DESC )? ( ',' group_by_expression ( K_ASC | K_DESC )? )* )?
+  ( K_GROUP K_BY group_by_expression ( OP_CMA group_by_expression )* )?
+  ( K_HAVING filter_expression ( OP_CMA filter_expression )* )?
+  ( K_ORDER K_BY group_by_expression ( K_ASC | K_DESC )? ( OP_CMA group_by_expression ( K_ASC | K_DESC )? )* )?
 ;
 
 group_by_expression
 : field_reference
 | function_call
+;
+
+temp_table_group_by_expression
+: temp_table_field_reference
+| temp_table_function_call
 ;
 
 filter_expression
@@ -25,8 +42,18 @@ filter_expression
 | K_NOT filter_expression
 | expression ( ( OP_EQ | OP_NOT_EQ | OP_LT | OP_LE | OP_GT | OP_GE | K_NOT? K_LIKE ) expression )?
 | expression K_IS K_NOT? K_NULL
-| expression K_NOT? K_IN OP_RBO ( expression (',' expression)* | subquery_full ) OP_RBC
+| expression K_NOT? K_IN OP_RBO ( expression (OP_CMA expression)* | subquery_full ) OP_RBC
 | expression K_NOT? K_EXISTS OP_RBO ( subquery_full ) OP_RBC
+;
+
+temp_table_filter_expression
+: temp_table_filter_expression ( ( K_AND | K_OR ) temp_table_filter_expression )+
+| OP_RBO temp_table_filter_expression OP_RBC
+| K_NOT temp_table_filter_expression
+| temp_table_expression ( ( OP_EQ | OP_NOT_EQ | OP_LT | OP_LE | OP_GT | OP_GE | K_NOT? K_LIKE ) temp_table_expression )?
+| temp_table_expression K_IS K_NOT? K_NULL
+| temp_table_expression K_NOT? K_IN OP_RBO ( temp_table_expression (OP_CMA temp_table_expression)* | subquery_full ) OP_RBC
+| temp_table_expression K_NOT? K_EXISTS OP_RBO ( subquery_full ) OP_RBC
 ;
 
 join_clause
@@ -57,18 +84,33 @@ result_column
 : expression ( K_AS any_identifier )?
 ;
 
-field_reference
-: OP_CBO (any_identifier FIELD_REF_SEPARATOR)? any_identifier (FIELD_REF_SEPARATOR any_identifier)? OP_CBC
+temp_table_result_column
+: temp_table_expression ( K_AS any_identifier )?
 ;
- 
+
+field_reference
+: OP_CBO (any_identifier ( '.' | ':' ) )? any_identifier ( ( '.' | ':' ) any_identifier )? OP_CBC
+;
+
+temp_table_field_reference
+: (any_identifier '.')? any_identifier
+;
+
 function_call
-: any_identifier OP_RBO expression (',' expression)* OP_RBC
+: any_identifier OP_RBO expression (OP_CMA expression)* OP_RBC
 | any_identifier OP_RBO K_DISTINCT? expression OP_RBC
 | any_identifier OP_RBO OP_ATSK OP_RBC
 | any_identifier OP_RBO OP_RBC
 ;
 
- expression
+temp_table_function_call
+: any_identifier OP_RBO temp_table_expression (OP_CMA temp_table_expression)* OP_RBC
+| any_identifier OP_RBO K_DISTINCT? temp_table_expression OP_RBC
+| any_identifier OP_RBO OP_ATSK OP_RBC
+| any_identifier OP_RBO OP_RBC
+;
+
+expression
 : OP_RBO expression OP_RBC
 | field_reference
 | STRING_LITERAL
@@ -76,6 +118,16 @@ function_call
 | bind_parameter
 | function_call
 | case_when_expression
+;
+
+temp_table_expression
+: OP_RBO temp_table_expression OP_RBC
+| temp_table_field_reference
+| STRING_LITERAL
+| signed_number
+| bind_parameter
+| temp_table_function_call
+| temp_table_case_when_expression
 ;
 
 case_when_expression
@@ -86,16 +138,23 @@ case_then_expression
 : ( expression | OP_RBO OP_CBO OP_CBO subquery_full OP_CBC OP_CBC OP_RBC )
 ;
 
-compound_operator
- : K_UNION
- | K_UNION K_ALL
- ;
+temp_table_case_when_expression
+: K_CASE ( K_WHEN filter_expression K_THEN temp_table_case_then_expression+ )+ K_ELSE temp_table_case_then_expression K_END
+;
 
+temp_table_case_then_expression
+: ( temp_table_expression | OP_RBO OP_CBO OP_CBO subquery_full OP_CBC OP_CBC OP_RBC )
+;
+
+compound_operator
+: K_UNION
+| K_UNION K_ALL
+;
 
 signed_number
- : ( '+' | '-' )? NUMERIC_LITERAL
- ;
- 
+: ( '+' | '-' )? NUMERIC_LITERAL
+;
+
 bind_parameter
 : '?' any_identifier
 ;
@@ -138,11 +197,11 @@ any_keyword
 ;
 
 
- /*
+/*
  * Lexer Rules
  */
- 
- 
+
+
 //keywords
 K_SELECT : S E L E C T;
 K_FROM : F R O M;
@@ -188,13 +247,10 @@ OP_RBO : '(';
 OP_RBC : ')';
 OP_EXCL : '!';
 OP_ATSK : '*';
+OP_CMA : ',';
 
 IDENTIFIER
 : [a-zA-Z_][a-zA-Z_0-9]*
-;
-
-FIELD_REF_SEPARATOR
-: [:.]
 ;
 
 NUMERIC_LITERAL
@@ -204,7 +260,6 @@ NUMERIC_LITERAL
 STRING_LITERAL
 : '\'' ~'\''* '\''
 ;
- 
 
 WHITESPACE : [ \t\r\n] -> skip;
 

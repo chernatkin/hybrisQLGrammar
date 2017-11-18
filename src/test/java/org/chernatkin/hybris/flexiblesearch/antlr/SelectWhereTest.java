@@ -91,4 +91,25 @@ public class SelectWhereTest extends AbstractHybrisQLTest {
         final String query = "SELECT * FROM {Product AS p} WHERE DATE({p.creation_time}) >= DATE(MINUS_MONTH({p.end_time}, 2), 'flag')";
         testQuery(query);
     }
+
+    @Test
+    public void selectWhereWithSubquery() {
+        final String query = "SELECT INNERTABLE.PK, INNERTABLE.CatCode FROM\n" +
+                "(\n" +
+                "   {{\n" +
+                "      SELECT {p:PK} AS PK, {c:code} AS CatCode FROM\n" +
+                "      {\n" +
+                "         Product AS p JOIN CategoryProductRelation AS rel\n" +
+                "         ON {p:PK} = {rel:target}\n" +
+                "         JOIN Category AS c\n" +
+                "         ON {rel:source} = {c:PK}\n" +
+                "      }\n" +
+                "   }}\n" +
+                ") INNERTABLE "
+                + "WHERE INNERTABLE.CatCode = 'abc' "
+                + "AND INNERTABLE.pk IS NOT NULL "
+                + "AND INNERTABLE.pk >= 0 "
+                + "OR ?date > NOW()";
+        testQuery(query);
+    }
 }
