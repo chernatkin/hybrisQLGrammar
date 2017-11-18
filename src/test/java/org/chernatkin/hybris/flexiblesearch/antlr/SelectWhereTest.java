@@ -17,8 +17,9 @@ public class SelectWhereTest extends AbstractHybrisQLTest {
                    + "AND {p2.index} >= +2 "
                    + "AND {p1.index} < -5 "
                    + "AND {p2.index} <= -5 "
-                   + "AND {p1.name} LIKE '%name%' "
-                   + "AND {p2.name} NOT LIKE '%test%'";
+                   + "AND {p1.name[en]} LIKE '%name%' "
+                   + "AND {p2.name[en]:o} NOT LIKE '%test%' "
+                   + "AND {p2.name[ANY].o} LIKE '%name%' ";
         testQuery(query);
     }
 

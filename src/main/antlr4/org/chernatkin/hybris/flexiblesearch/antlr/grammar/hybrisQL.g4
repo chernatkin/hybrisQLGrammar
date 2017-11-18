@@ -89,7 +89,7 @@ temp_table_result_column
 ;
 
 field_reference
-: OP_CBO (any_identifier ( '.' | ':' ) )? any_identifier ( ( '.' | ':' ) any_identifier )? OP_CBC
+: OP_CBO (any_identifier ( '.' | ':' ) )? any_identifier ( OP_SBO any_identifier OP_SBC )? ( ( '.' | ':' ) IDENTIFIER )? OP_CBC
 ;
 
 temp_table_field_reference
@@ -245,6 +245,8 @@ OP_CBO : '{';
 OP_CBC : '}';
 OP_RBO : '(';
 OP_RBC : ')';
+OP_SBO : '[';
+OP_SBC : ']';
 OP_EXCL : '!';
 OP_ATSK : '*';
 OP_CMA : ',';
